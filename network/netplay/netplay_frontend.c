@@ -4712,6 +4712,19 @@ static void handle_play_spectate(netplay_t *netplay,
             }
             devices = 1<<device;
             netplay->device_share_modes[device] = share_mode;
+
+            // Always share first Sinclair keyboard device
+            #define RETRO_DEVICE_SPECTRUM_KEYBOARD  RETRO_DEVICE_SUBCLASS(RETRO_DEVICE_KEYBOARD, 0)
+            for (device = 0; device < MAX_INPUT_DEVICES; device++)
+            {
+                if (netplay->config_devices[device] == RETRO_DEVICE_SPECTRUM_KEYBOARD &&
+                   netplay->device_share_modes[device] && share_mode) {
+                    netplay->device_share_modes[device] = share_mode;
+                    devices |= 1<<device;
+                    break;
+                }
+            }
+
          }
 
          payload[2] = htonl(devices);
