@@ -255,6 +255,10 @@
 #endif
 #endif
 
+#ifdef HAVE_NETWORKING
+static bool _keep_netplay_host_on = false;
+#endif
+
 /* Descriptive names for options without short variant.
  *
  * Please keep the name in sync with the option name.
@@ -1973,6 +1977,11 @@ bool command_event(enum event_command cmd, void *data)
                runloop_st->subsystem_current_count = 0;
                content_clear_subsystem();
             }
+
+#ifdef HAVE_NETWORKING
+            if (_keep_netplay_host_on)
+               command_event(CMD_EVENT_NETPLAY_ENABLE_HOST, NULL);
+#endif
          }
          break;
       case CMD_EVENT_CLOSE_CONTENT:
@@ -2876,6 +2885,8 @@ bool command_event(enum event_command cmd, void *data)
                command_event(CMD_EVENT_NETPLAY_DEINIT, NULL);
             netplay_driver_ctl(RARCH_NETPLAY_CTL_ENABLE_SERVER, NULL);
 
+            _keep_netplay_host_on = true;
+
             /* If we haven't yet started, this will load on its own */
             if (!is_inited)
             {
@@ -2911,16 +2922,22 @@ bool command_event(enum event_command cmd, void *data)
                   command_event(CMD_EVENT_AUTOSAVE_INIT, NULL);
             }
 
+            _keep_netplay_host_on = false;
+
             break;
          }
       case CMD_EVENT_NETPLAY_HOST_TOGGLE:
          if (netplay_driver_ctl(RARCH_NETPLAY_CTL_IS_ENABLED, NULL) &&
-               netplay_driver_ctl(RARCH_NETPLAY_CTL_IS_SERVER, NULL))
+               netplay_driver_ctl(RARCH_NETPLAY_CTL_IS_SERVER, NULL)) {
             command_event(CMD_EVENT_NETPLAY_DISCONNECT, NULL);
+            _keep_netplay_host_on = false;
+         }
          else if (netplay_driver_ctl(RARCH_NETPLAY_CTL_IS_ENABLED, NULL) &&
                !netplay_driver_ctl(RARCH_NETPLAY_CTL_IS_SERVER, NULL) &&
-               netplay_driver_ctl(RARCH_NETPLAY_CTL_IS_CONNECTED, NULL))
+               netplay_driver_ctl(RARCH_NETPLAY_CTL_IS_CONNECTED, NULL)) {
             command_event(CMD_EVENT_NETPLAY_DISCONNECT, NULL);
+            _keep_netplay_host_on = false;
+         }
          else
             command_event(CMD_EVENT_NETPLAY_ENABLE_HOST, NULL);
 
